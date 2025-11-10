@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SEO Meta Tags -->
+    <title>Global Gist Blog | AI-Powered Insights on News, Lifestyle & More</title>
+    <meta name="description" content="An AI-powered blog that discusses the top gists from around the globe, including news, lifestyle, tourism, and amazing historical stories, all grounded with real-time web search." />
+    <meta name="keywords" content="AI blog, global news, lifestyle trends, tourism, history, technology, web search, AI journalism, fintech, innovation" />
+    <meta name="author" content="Global Gist Blog" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://global-gist-blog.example.com/" />
+    <meta property="og:title" content="Global Gist Blog | AI-Powered Insights" />
+    <meta property="og:description" content="An AI-powered blog discussing news, lifestyle, tourism, and history with real-time web search." />
+    <meta property="og:image" content="https://storage.googleapis.com/aai-web-samples/user-assets/og_global_gist.png" />
+    <meta property="og:site_name" content="Global Gist Blog" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Global Gist Blog | AI-Powered Insights" />
+    <meta name="twitter:description" content="An AI-powered blog discussing news, lifestyle, tourism, and history with real-time web search." />
+    <meta name="twitter:image" content="https://storage.googleapis.com/aai-web-samples/user-assets/og_global_gist.png" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'primary': '#0D0D0D',
+              'secondary': '#1A1A1A',
+              'accent': '#3B82F6',
+              'text-primary': '#F5F5F5',
+              'text-secondary': '#A3A3A3',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.81.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-primary text-text-primary">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
