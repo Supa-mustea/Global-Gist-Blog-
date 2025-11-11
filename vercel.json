@@ -5,6 +5,7 @@
     { "src": "api/entry.ts", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/api/ping", "dest": "/api/ping.ts" },
     { "src": "/api(.*)", "dest": "/api/entry.ts" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
