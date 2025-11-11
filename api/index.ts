@@ -8,18 +8,33 @@ import { BlogPost, Author, GroundingSource, Comment } from '../types';
 import { TOPICS } from "../constants";
 
 // --- SECURITY ---
-// Credentials are securely accessed from environment variables on the server.
+// Credentials are accessed from environment variables on the server.
+// Recommended: set a SUPABASE_SERVICE_ROLE_KEY for server-side writes and keep
+// the SUPABASE_ANON_KEY for client-side/public reads. The service role key must
+// only be stored on the server or in your hosting provider's secret store.
 const API_KEY = process.env.API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!API_KEY || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error("Missing required environment variables on the server.");
+// Minimal required values for the server to operate.
+if (!API_KEY || !SUPABASE_URL) {
+    throw new Error("Missing required environment variables on the server. Ensure API_KEY and SUPABASE_URL are set.");
+}
+
+if (!SUPABASE_ANON_KEY && !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase credentials missing: set at least SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY.");
 }
 
 // --- CLIENT INITIALIZATION ---
 const ai = new GoogleGenAI({ apiKey: API_KEY });
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Create Supabase clients. If a service role key is provided, use that for the
+// main server client (it has elevated privileges and can bypass RLS). Otherwise
+// fall back to the anon key — note that writes may fail if Row Level Security
+// (RLS) prevents anonymous inserts/updates/deletes.
+const supabaseAdmin = SUPABASE_SERVICE_ROLE_KEY ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) : null;
+const supabase = SUPABASE_SERVICE_ROLE_KEY ? supabaseAdmin! : createClient(SUPABASE_URL, SUPABASE_ANON_KEY!);
 
 
 // --- UTILITIES & DEFAULT DATA ---

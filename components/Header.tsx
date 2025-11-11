@@ -21,3 +21,9 @@ export const Header: React.FC<HeaderProps> = ({ onGoToSavedPosts, onGoHome }) =>
         className="bg-accent/80 hover:bg-accent text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300"
       >
         Saved
+      </button>
+    </div>
+  </header>
+);
+
+export default Header;
