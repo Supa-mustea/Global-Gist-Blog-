@@ -7,44 +7,65 @@
  implement the application logic using the Web Fetch API `Request`/`Response`.
 */
 
-import * as api from './index';
-
-// Vercel (and many serverless hosts) call the function with (req, res).
-// We'll adapt Node's req/res to the Web Request and forward the Response back.
+// Dynamically import the API module at invocation time so import-time errors
+// can be captured and returned to the caller. This prevents Vercel from
+// returning a generic FUNCTION_INVOCATION_FAILED and lets us surface the
+// actual initialization error for debugging.
 export default async function handler(req: any, res: any) {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+
+    let api: any;
+    try {
+      api = await import('./index');
+    } catch (importErr: any) {
+      console.error('Failed to import api/index at runtime:', importErr);
+      res.status(500).json({ error: 'Server initialization failed', message: importErr?.message });
+      return;
+    }
 
     if (req.method === 'POST') {
       let body = '';
       for await (const chunk of req) body += chunk;
 
-      const request = new Request(url.toString(), {
-        method: 'POST',
-        headers: req.headers as any,
-        body,
-      });
+      try {
+        const request = new Request(url.toString(), {
+          method: 'POST',
+          headers: req.headers as any,
+          body,
+        });
 
-      const response = await api.POST(request as any);
-      const text = await response.text();
-      // copy headers
-      response.headers.forEach((value, key) => res.setHeader(key, value));
-      res.status(response.status).send(text);
-      return;
+        const response = await api.POST(request as any);
+        const text = await response.text();
+        // copy headers
+        response.headers.forEach((value, key) => res.setHeader(key, value));
+        res.status(response.status).send(text);
+        return;
+      } catch (err: any) {
+        console.error('API POST handler error:', err);
+        res.status(500).json({ error: err?.message || 'Internal server error in POST handler' });
+        return;
+      }
     }
 
     if (req.method === 'GET') {
-      const request = new Request(url.toString(), { method: 'GET', headers: req.headers as any });
-      const response = await api.GET(request as any);
-      const text = await response.text();
-      response.headers.forEach((value, key) => res.setHeader(key, value));
-      res.status(response.status).send(text);
-      return;
+      try {
+        const request = new Request(url.toString(), { method: 'GET', headers: req.headers as any });
+        const response = await api.GET(request as any);
+        const text = await response.text();
+        response.headers.forEach((value, key) => res.setHeader(key, value));
+        res.status(response.status).send(text);
+        return;
+      } catch (err: any) {
+        console.error('API GET handler error:', err);
+        res.status(500).json({ error: err?.message || 'Internal server error in GET handler' });
+        return;
+      }
     }
 
     res.status(405).send({ error: 'Method Not Allowed' });
   } catch (err: any) {
-    console.error('API entry handler error:', err);
+    console.error('API entry handler unexpected error:', err);
     res.status(500).json({ error: err?.message || 'Internal Server Error' });
   }
 }
