@@ -17,7 +17,8 @@ export default async function handler(req: any, res: any) {
 
     let api: any;
     try {
-      api = await import('./index');
+      // Import the compiled JS module produced by the Vercel build output.
+      api = await import('./index.js');
     } catch (importErr: any) {
       console.error('Failed to import api/index at runtime:', importErr);
       res.status(500).json({ error: 'Server initialization failed', message: importErr?.message });

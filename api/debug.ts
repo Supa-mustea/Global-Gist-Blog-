@@ -9,7 +9,7 @@ export default async function handler(req: any, res: any) {
     // Dynamically import the main API module so we can catch module-load errors
     let api: any;
     try {
-      api = await import('./index');
+      api = await import('./index.js');
     } catch (importErr: any) {
       console.error('Failed to import api/index:', importErr);
       res.status(500).json({ debug: true, stage: 'import', message: importErr?.message, stack: importErr?.stack });
