@@ -2,11 +2,19 @@
 // WARNING: This endpoint exposes internal error messages and stacks. Remove before leaving
 // this temporary debugging state in production.
 
-import * as api from './index';
-
 export default async function handler(req: any, res: any) {
   try {
     const url = new URL(req.url || '/', `https://${req.headers.host}`);
+
+    // Dynamically import the main API module so we can catch module-load errors
+    let api: any;
+    try {
+      api = await import('./index');
+    } catch (importErr: any) {
+      console.error('Failed to import api/index:', importErr);
+      res.status(500).json({ debug: true, stage: 'import', message: importErr?.message, stack: importErr?.stack });
+      return;
+    }
 
     if (req.method === 'POST') {
       let body = '';
@@ -20,7 +28,7 @@ export default async function handler(req: any, res: any) {
         return;
       } catch (err: any) {
         console.error('Debug POST handler caught error:', err);
-        res.status(500).json({ debug: true, message: err?.message, stack: err?.stack });
+        res.status(500).json({ debug: true, stage: 'handler', message: err?.message, stack: err?.stack });
         return;
       }
     }
@@ -34,7 +42,7 @@ export default async function handler(req: any, res: any) {
         return;
       } catch (err: any) {
         console.error('Debug GET handler caught error:', err);
-        res.status(500).json({ debug: true, message: err?.message, stack: err?.stack });
+        res.status(500).json({ debug: true, stage: 'handler', message: err?.message, stack: err?.stack });
         return;
       }
     }
@@ -42,6 +50,6 @@ export default async function handler(req: any, res: any) {
     res.status(405).json({ error: 'Method Not Allowed' });
   } catch (err: any) {
     console.error('Debug handler unexpected error:', err);
-    res.status(500).json({ debug: true, message: err?.message, stack: err?.stack });
+    res.status(500).json({ debug: true, stage: 'unexpected', message: err?.message, stack: err?.stack });
   }
 }
