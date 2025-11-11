@@ -7,7 +7,7 @@
  implement the application logic using the Web Fetch API `Request`/`Response`.
 */
 
-import * as api from './index.js';
+import * as api from './index';
 
 // Vercel (and many serverless hosts) call the function with (req, res).
 // We'll adapt Node's req/res to the Web Request and forward the Response back.
