@@ -4,8 +4,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
-import { BlogPost, Author, GroundingSource, Comment } from '../types';
-import { TOPICS } from "../constants";
+import { BlogPost, Author, GroundingSource, Comment } from '../types.js';
+import { TOPICS } from "../constants.js";
 
 // --- SECURITY ---
 // Credentials are accessed from environment variables on the server.
