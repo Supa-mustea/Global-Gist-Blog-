@@ -147,12 +147,30 @@ async function generateAndSavePosts(topic: string, count: number = 10, excludeTi
         contents: prompt,
         config: { tools: [{ googleSearch: {} }] }
     });
-    
-    const jsonText = cleanJsonString(response.text);
-    const parsed = JSON.parse(jsonText);
+    let parsed: any = null;
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
-    const newBlogPosts: BlogPost[] = parsed.posts.map((post: any, index: number) => ({
+    try {
+        const jsonText = cleanJsonString(response.text);
+        parsed = JSON.parse(jsonText);
+    } catch (err) {
+        // Try a relaxed extraction: find the first JSON object in the text
+        try {
+            const txt = response.text || '';
+            const first = txt.indexOf('{');
+            const last = txt.lastIndexOf('}');
+            if (first !== -1 && last !== -1 && last > first) {
+                const candidate = txt.substring(first, last + 1);
+                parsed = JSON.parse(cleanJsonString(candidate));
+            }
+        } catch (err2) {
+            console.error('Failed to parse AI response as JSON:', err, err2, '\nresponse.text snippet:', (response.text || '').substring(0,1000));
+            // As a safe fallback, return an empty array so the caller can continue.
+            return [];
+        }
+    }
+
+    const newBlogPosts: BlogPost[] = (parsed.posts || []).map((post: any, index: number) => ({
       id: `${topic.replace(/\s+/g, '-')}-${index}-${new Date().getTime()}`,
       topic: topic,
       title: post.title,
@@ -282,15 +300,25 @@ export async function POST(request: Request) {
       // --- OTHER GEMINI ---
       case 'findYouTubeVideoId': {
           const { query } = payload;
-          const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: `Find a YouTube video ID for: "${query}"`, config: { responseMimeType: "application/json", responseSchema: youtubeVideoIdSchema } });
-          const result = JSON.parse(response.text);
-          return new Response(JSON.stringify(result.videoId || null), { status: 200 });
+                    try {
+                        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: `Find a YouTube video ID for: "${query}"`, config: { responseMimeType: "application/json", responseSchema: youtubeVideoIdSchema } });
+                        const parsed = JSON.parse(cleanJsonString(response.text || ''));
+                        return new Response(JSON.stringify(parsed.videoId || null), { status: 200 });
+                    } catch (err: any) {
+                        console.error('findYouTubeVideoId parsing error:', err);
+                        return new Response(JSON.stringify(null), { status: 200 });
+                    }
       }
       case 'extractKeywordsFromContent': {
           const { content } = payload;
-          const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: `Extract 3-5 keywords from: "${content.substring(0, 1000)}..."`, config: { responseMimeType: "application/json", responseSchema: keywordSchema } });
-          const result = JSON.parse(response.text);
-          return new Response(JSON.stringify(result.tags || []), { status: 200 });
+                    try {
+                        const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: `Extract 3-5 keywords from: "${content.substring(0, 1000)}..."`, config: { responseMimeType: "application/json", responseSchema: keywordSchema } });
+                        const parsed = JSON.parse(cleanJsonString(response.text || ''));
+                        return new Response(JSON.stringify(parsed.tags || []), { status: 200 });
+                    } catch (err: any) {
+                        console.error('extractKeywordsFromContent parsing error:', err);
+                        return new Response(JSON.stringify([]), { status: 200 });
+                    }
       }
 
       // --- CRON JOB / AGENT ---
@@ -311,7 +339,13 @@ export async function POST(request: Request) {
 
           for (const topic of Array.from(topicsToSeed)) {
               console.log(`Seeding new content for topic: ${topic}`);
-              await generateAndSavePosts(topic, 5);
+              try {
+                  // Keep seed calls small to limit API usage/costs. Generate 1 post per topic by default.
+                  await generateAndSavePosts(topic, 1);
+              } catch (err) {
+                  console.error(`Seeding failed for topic ${topic}:`, err);
+                  // Continue with other topics even if one fails.
+              }
           }
           
           return new Response(JSON.stringify({ success: true, seededTopics: Array.from(topicsToSeed) }), { status: 200 });
@@ -333,7 +367,8 @@ export async function GET(request: Request) {
         const url = new URL(request.url);
         // Basic security check: ensure the request is for the cron endpoint.
         // For higher security, you could add a secret key to the cron job URL.
-        if (url.pathname.endsWith('/api/cron') || url.pathname.endsWith('/api')) {
+        // Only trigger seeding for an explicit cron endpoint to avoid accidental runs.
+        if (url.pathname.endsWith('/api/cron')) {
             // Simulate the POST request structure for our handler
             const syntheticRequest = new Request(request.url, {
                 method: 'POST',
